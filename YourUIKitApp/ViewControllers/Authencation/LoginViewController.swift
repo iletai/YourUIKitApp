@@ -25,7 +25,6 @@ class LoginViewController: UIViewController {
 
     var isLogin = true
 
-
     override func viewDidLoad() {
         super.viewDidLoad()
         updateUIActionFor(isLogin: true)
@@ -46,6 +45,15 @@ class LoginViewController: UIViewController {
         updatePlaceholderLables(textField)
     }
 
+    private func setupBackgroundTap() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(backgroundTap))
+        view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc func backgroundTap() {
+        view.endEditing(false)
+    }
+
     // MARK: - Press function
     @IBAction func signUpPress(_ sender: UIButton) {
         updateUIActionFor(isLogin: sender.titleLabel?.text == "Sign In")
@@ -53,12 +61,40 @@ class LoginViewController: UIViewController {
     }
 
     @IBAction func forgotPasswordPress(_ sender: Any) {
+        resendPasswordReset()
+    }
+
+    func resendPasswordReset() {
+        FirebaseUserListener.shared.resetPasswordFor(email: emailTextFieldOl.text!) { error in
+            if error == nil {
+                print("Sucess send forgot password!")
+            } else {
+                print(error!.localizedDescription)
+            }
+        }
     }
 
     @IBAction func resendEmailPress(_ sender: Any) {
+        resendEmailPress()
+    }
+
+    func resendEmailPress() {
+        FirebaseUserListener.shared.resendVerificationEmail(email: emailTextFieldOl.text!) {
+            error in
+            if error == nil {
+                print("Email Request Resend!")
+            }
+        }
     }
 
     @IBAction func signInButtonPress(_ sender: UIButton) {
+        FirebaseUserListener.shared.loginUserWithEmail(
+            email: emailTextFieldOl.text!, password: passwordTextFieldOl.text!
+        ) { error, isEmailVerified in
+            if isEmailVerified {
+                self.goToApp()
+            }
+        }
     }
 
     // MARK: - Animation
@@ -83,6 +119,15 @@ class LoginViewController: UIViewController {
             self.repeatPasswordLableOl.isHidden = isLogin
             self.repeatPasswordTextFieldOl.isHidden = isLogin
             self.repeatPasswordLineView.isHidden = isLogin
+        }
+    }
+
+    func goToApp() {
+        let mainView =
+            UIStoryboard(name: "Main", bundle: nil).instantiateViewController(
+                withIdentifier: "MainApp") as! UITabBarController
+        mainView.modalPresentationStyle = .fullScreen
+        self.present(mainView, animated: true) {
         }
     }
 }
